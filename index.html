@@ -6,7 +6,7 @@
   <title>BART Realtime Boards</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #000;
@@ -24,21 +24,35 @@
       flex-direction: column;
       align-items: center;
     }
-    .wrap { width: min(880px, 92vw); margin: 24px 0; }
-    header { display:flex; align-items:center; justify-content:space-between; }
-    .title { font-family: "Space Grotesk", Inter, sans-serif; font-size: 1.8rem; font-weight: 600; }
+    .wrap { width: min(880px, 92vw); margin: 20px 0; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .title { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 300; font-size: clamp(1.2rem, 4.2vw, 1.8rem); }
     .badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--rule); color: var(--muted); }
     .toolbar { display:flex; gap:10px; align-items:center; margin-top: 10px; color: var(--muted); }
     select, button { background:#111; color:var(--text); border:1px solid var(--rule); border-radius:8px; padding:6px 10px; }
+
     .board { margin-top:12px; background:var(--card); border:1px solid var(--rule); border-radius:10px; overflow:clip; }
-    .row { display:grid; grid-template-columns: 1fr auto auto auto; gap:20px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--rule); }
+    .row { display:grid; grid-template-columns: 1fr auto; gap:16px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--rule); }
     .row:last-child{border-bottom:none;}
-    .dest{display:flex;align-items:center;gap:10px;}
-    .pill{width:16px;height:16px;border-radius:50%;outline:1px solid rgba(255,255,255,.15);outline-offset:-1px;}
-    .destination-name{font-family:"Space Grotesk";font-size:1.2rem;font-weight:600;}
-    .min{font-variant-numeric:tabular-nums;font-weight:700;font-size:2rem;}
+
+    .dest{display:flex;align-items:center;gap:10px;min-width:0;}
+    .pill{width:16px;height:16px;border-radius:50%;outline:1px solid rgba(255,255,255,.15);outline-offset:-1px;flex:0 0 16px;}
+    .destination-name{font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-weight:300; font-size:1.2rem; letter-spacing:0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+    .min{font-variant-numeric:tabular-nums;font-weight:700;font-size:2rem;line-height:1;text-align:right;min-width:5ch;}
     .min .small{font-weight:400;font-size:.7rem;color:var(--muted);margin-left:4px;}
-    .plat,.len{font-size:.8rem;color:var(--muted);}
+
+    .meta{grid-column:1 / -1;font-size:.9rem;color:var(--muted);display:flex;gap:10px;align-items:center;margin-top:4px;}
+
+    @media (min-width: 640px) {
+      .row { grid-template-columns: 1fr auto auto; }
+      .meta { grid-column: auto; justify-self: end; margin-top:0; }
+    }
+
+    @media (max-width: 360px) {
+      .min{font-size:1.8rem;}
+      .destination-name{font-size:1.1rem;}
+    }
   </style>
 </head>
 <body>
@@ -91,7 +105,13 @@
           if((est.direction||'').toLowerCase().startsWith(dir)){
             let minutes = est.minutes;
             if (minutes === 'Leaving') minutes = '0';
-            rows.push({destination:item.destination,minutes:minutes,length:est.length,hexcolor:est.hexcolor,bikeflag:est.bikeflag});
+            rows.push({
+              destination:item.destination,
+              minutes:minutes,
+              length:est.length,
+              hexcolor:est.hexcolor,
+              bikeflag:est.bikeflag
+            });
           }
         });
       });
@@ -102,13 +122,18 @@
 
   function renderBoard(el,rows){
     if(!rows.length){el.innerHTML='<div class="row">No departures right now.</div>';return;}
-    el.innerHTML=rows.map(r=>`
+    el.innerHTML=rows.map(r=>{
+      const metaParts = [];
+      if (r.length) metaParts.push(`${r.length} cars`);
+      if (r.bikeflag==='1') metaParts.push('🚲 ok');
+      const meta = metaParts.length ? `<div class="meta">${metaParts.join(' · ')}</div>` : '';
+      return `
       <div class="row">
         <div class="dest"><span class="pill" style="background:${r.hexcolor||'#888'}"></span><div class="destination-name">${r.destination}</div></div>
         <div class="min">${r.minutes}<span class="small">min</span></div>
-        <div class="plat">${r.length? r.length+' cars':''}</div>
-        <div class="len">${r.bikeflag==='1'?'🚲 ok':''}</div>
-      </div>`).join('');
+        ${meta}
+      </div>`;
+    }).join('');
   }
 
   async function updateBoards(){
