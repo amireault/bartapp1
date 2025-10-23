@@ -32,25 +32,23 @@
     select, button { background:#111; color:var(--text); border:1px solid var(--rule); border-radius:8px; padding:6px 10px; }
 
     .board { margin-top:12px; background:var(--card); border:1px solid var(--rule); border-radius:10px; overflow:clip; }
-    .row { display:grid; grid-template-columns: 1fr auto; gap:16px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--rule); }
+    .row { display:grid; grid-template-columns: 1fr auto auto; gap:16px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--rule); }
     .row:last-child{border-bottom:none;}
 
     .dest{display:flex;align-items:center;gap:10px;min-width:0;}
     .pill{width:16px;height:16px;border-radius:50%;outline:1px solid rgba(255,255,255,.15);outline-offset:-1px;flex:0 0 16px;}
     .destination-name{font-family:"Helvetica Neue", Helvetica, Arial, sans-serif; font-weight:300; font-size:1.2rem; letter-spacing:0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
-    .min{font-variant-numeric:tabular-nums;font-weight:700;font-size:2rem;line-height:1;text-align:right;min-width:5ch;}
+    .min{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.8rem;line-height:1;text-align:right;min-width:5ch;}
     .min .small{font-weight:400;font-size:.7rem;color:var(--muted);margin-left:4px;}
 
-    .meta{grid-column:1 / -1;font-size:.9rem;color:var(--muted);display:flex;gap:10px;align-items:center;margin-top:4px;}
+    .meta{font-size:.75rem;color:var(--muted);display:flex;flex-direction:column;gap:2px;align-items:flex-end;justify-self:end;line-height:1;}
 
-    @media (min-width: 640px) {
-      .row { grid-template-columns: 1fr auto auto; }
-      .meta { grid-column: auto; justify-self: end; margin-top:0; }
+    @media (min-width: 640px) { .row { gap:16px; } .meta { justify-self: end; } }
     }
 
     @media (max-width: 360px) {
-      .min{font-size:1.8rem;}
+      .min{font-size:1.0rem;}
       .destination-name{font-size:1.1rem;}
     }
   </style>
@@ -87,6 +85,7 @@
   <script>
   const API_KEY = 'MW9S-E7SL-26DU-VV8V';
   const INTERVAL_DEFAULT = 10;
+  const MAX_ROWS = 6;
 
   async function fetchEtd(station, direction, signal){
     const url = `https://api.bart.gov/api/etd.aspx?cmd=etd&orig=${station}&dir=${direction}&key=${API_KEY}&json=y`;
@@ -122,11 +121,11 @@
 
   function renderBoard(el,rows){
     if(!rows.length){el.innerHTML='<div class="row">No departures right now.</div>';return;}
-    el.innerHTML=rows.map(r=>{
-      const metaParts = [];
-      if (r.length) metaParts.push(`${r.length} cars`);
-      if (r.bikeflag==='1') metaParts.push('🚲 ok');
-      const meta = metaParts.length ? `<div class="meta">${metaParts.join(' · ')}</div>` : '';
+    const limited = rows.slice(0, MAX_ROWS);
+    el.innerHTML=limited.map(r=>{
+      const cars = r.length ? `<span class=\"cars\">${r.length} cars</span>` : '';
+      const bike = r.bikeflag==='1' ? `<span class=\"bike\">🚲 ok</span>` : '';
+      const meta = (cars || bike) ? `<div class=\"meta\">${cars}${bike}</div>` : '';
       return `
       <div class="row">
         <div class="dest"><span class="pill" style="background:${r.hexcolor||'#888'}"></span><div class="destination-name">${r.destination}</div></div>
